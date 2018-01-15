@@ -208,6 +208,7 @@ public class OnlineVideoFragment extends BaseFragment {
                             mdPlayer.showView(R.id.adapter_player_control);*/
                             mCustomMediaPlayer.showView(R.id.adapter_player_control);
                             mCustomMediaPlayer.setHideControl(true);
+                            mCustomMediaPlayer.hide(true);
                             mLittleWindow.setVisibility(View.VISIBLE);
                             mLittleWindow.removeAllViews();
                             mLittleWindow.addView(mCustomMediaPlayer);
