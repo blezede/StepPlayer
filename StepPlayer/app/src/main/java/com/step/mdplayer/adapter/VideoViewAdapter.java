@@ -14,11 +14,11 @@ import com.step.mdplayer.utils.DeviceUtils;
  * Created by Dawish on 2016/10/3.
  */
 
-public class VideoViewAdapater extends BaseRecyclerViewAdapter<VideoListBean>{
+public class VideoViewAdapter extends BaseRecyclerViewAdapter<VideoListBean>{
 
     Context mContext;
 
-    public VideoViewAdapater(Context context){
+    public VideoViewAdapter(Context context){
         this.mContext = context;
     }
 
@@ -68,7 +68,7 @@ public class VideoViewAdapater extends BaseRecyclerViewAdapter<VideoListBean>{
                 @Override
                 public void onClick(View v) {
                     if (playclick != null)
-                        playclick.onPlayclick(position, playerControlLayout);
+                        playclick.onPlayClicked(position, playerControlLayout);
                 }
             });
         }
@@ -82,7 +82,7 @@ public class VideoViewAdapater extends BaseRecyclerViewAdapter<VideoListBean>{
     }
 
     public interface onPlayClick {
-        void onPlayclick(int position, RelativeLayout image);
+        void onPlayClicked(int position, RelativeLayout image);
     }
 
 }

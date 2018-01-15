@@ -64,18 +64,20 @@ public class MainActivity extends BaseActivity
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.contentLayout , listFragment ,listFragment.getClass().getSimpleName());
+        transaction.hide(listFragment);
         transaction.add(R.id.contentLayout , settingsFragment ,settingsFragment.getClass().getSimpleName());
         transaction.hide(settingsFragment);
         transaction.add(R.id.contentLayout , meizhiFragment ,meizhiFragment.getClass().getSimpleName());
         transaction.hide(meizhiFragment);
 
         transaction.add(R.id.contentLayout, onlineVideoFragment, onlineVideoFragment.getClass().getSimpleName());
-        transaction.hide(onlineVideoFragment);
+        //transaction.hide(onlineVideoFragment);
 
-        getSupportActionBar().setTitle("目录");
+        getSupportActionBar().setTitle("在线视频");
         transaction.commit();
 
-        navigationView.getMenu().getItem(0).setChecked(true);
+        navigationView.getMenu().getItem(1).setChecked(true);
+        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
 
     /**

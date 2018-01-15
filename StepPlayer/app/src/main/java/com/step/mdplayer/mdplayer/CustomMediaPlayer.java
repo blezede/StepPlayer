@@ -427,7 +427,7 @@ public class CustomMediaPlayer extends RelativeLayout {
 					case IMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
 						statusChange(STATUS_PLAYING);
 						break;
-						case IMediaPlayer.MEDIA_INFO_VIDEO_ROTATION_CHANGED:
+					case IMediaPlayer.MEDIA_INFO_VIDEO_ROTATION_CHANGED:
 							Log.e("MD", "onInfo -->" + extra);
 							break;
 				}

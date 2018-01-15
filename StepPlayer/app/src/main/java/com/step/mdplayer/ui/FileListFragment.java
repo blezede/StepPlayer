@@ -209,7 +209,7 @@ public class FileListFragment extends BaseFragment implements IMVPView {
     protected void initDatas() {
         videoFilePresenter = new VideoFilePresenter();
         videoFilePresenter.attachView(this);
-        videoFilePresenter.getFileData(false);
+        //videoFilePresenter.getFileData(false);
     }
 
     public void closeFAM(){

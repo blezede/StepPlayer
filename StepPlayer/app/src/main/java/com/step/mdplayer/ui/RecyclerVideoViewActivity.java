@@ -12,7 +12,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.step.mdplayer.R;
-import com.step.mdplayer.adapter.VideoViewAdapater;
+import com.step.mdplayer.adapter.VideoViewAdapter;
 import com.step.mdplayer.base.BaseActivity;
 import com.step.mdplayer.mdplayer.CustomMediaPlayer;
 import com.step.mdplayer.mdplayer.MDPlayerManager;
@@ -31,7 +31,7 @@ public class RecyclerVideoViewActivity extends BaseActivity {
     private RecyclerView videoRecyclerView;
     private RelativeLayout fullScreen;
     private LinearLayoutManager mLayoutManager;
-    private VideoViewAdapater videoViewAdapater;
+    private VideoViewAdapter videoViewAdapter;
 
     private int postion = -1;
     private int lastPostion = -1;
@@ -62,9 +62,9 @@ public class RecyclerVideoViewActivity extends BaseActivity {
     @Override
     protected void initData() {
         setData();
-        videoViewAdapater = new VideoViewAdapater(RecyclerVideoViewActivity.this);
-        videoViewAdapater.setData(dataList);
-        videoRecyclerView.setAdapter(videoViewAdapater);
+        videoViewAdapter = new VideoViewAdapter(RecyclerVideoViewActivity.this);
+        videoViewAdapter.setData(dataList);
+        videoRecyclerView.setAdapter(videoViewAdapter);
 
     }
 
@@ -78,9 +78,9 @@ public class RecyclerVideoViewActivity extends BaseActivity {
         /**
          * 点击开始播放器
          */
-        videoViewAdapater.setPlayClick(new VideoViewAdapater.onPlayClick() {
+        videoViewAdapter.setPlayClick(new VideoViewAdapter.onPlayClick() {
             @Override
-            public void onPlayclick(int position, RelativeLayout image) {
+            public void onPlayClicked(int position, RelativeLayout image) {
                 image.setVisibility(View.GONE);
                 if (customMediaPlayer.isPlaying() && lastPostion == position) {
                     return;

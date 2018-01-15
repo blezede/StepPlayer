@@ -17,7 +17,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.step.mdplayer.R;
-import com.step.mdplayer.adapter.VideoViewAdapater;
+import com.step.mdplayer.adapter.VideoViewAdapter;
 import com.step.mdplayer.base.BaseFragment;
 import com.step.mdplayer.mdplayer.CustomMediaPlayer;
 import com.step.mdplayer.mdplayer.MDPlayerManager;
@@ -29,64 +29,64 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Dawish on 2016/10/4.
+ * Created by gaoq on 2018/01/15.仿
  */
 
 public class OnlineVideoFragment extends BaseFragment {
 
-    private View rootView;
-    private List<VideoListBean> dataList = new ArrayList<>();
-    private RecyclerView videoRecyclerView;
+    private View mRootView;
+    private List<VideoListBean> mDataList = new ArrayList<>();
+    private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
-    private VideoViewAdapater videoViewAdapater;
+    private VideoViewAdapter mVideoViewAdapter;
 
-    private RelativeLayout fullScreen;
+    private RelativeLayout mFullScreenLayout; //全屏幕视频
+    private RelativeLayout mLittleWindow; //小窗口
 
-    private int postion = -1;
-    private int lastPostion = -1;
+    private int mCurrPlayPosition = -1;
+    private int mLastPlayPosition = -1;
 
-    private CustomMediaPlayer customMediaPlayer;
+    private CustomMediaPlayer mCustomMediaPlayer;
 
     /***
      * 全屏播放器放在MainActivity中
      */
-    private static MainActivity mainActivity;
+    private static MainActivity mMainActivity;
 
     public static OnlineVideoFragment newInstance(Context context) {
         OnlineVideoFragment fragment = new OnlineVideoFragment();
-        mainActivity = (MainActivity)context;
+        mMainActivity = (MainActivity) context;
         return fragment;
     }
 
 
     @Override
     protected View getContentView(LayoutInflater inflater, ViewGroup container) {
-        rootView = inflater.inflate(R.layout.activity_scroll_videoview, container, false);
-        return rootView;
+        mRootView = inflater.inflate(R.layout.activity_scroll_videoview, container, false);
+        return mRootView;
     }
-    RelativeLayout mLittleWindow;
+
     @Override
     protected void initViews(View contentView) {
-        SwipeRefreshLayout swipeView = (SwipeRefreshLayout) rootView.findViewById(R.id.refreshLayout);
+        SwipeRefreshLayout swipeView = (SwipeRefreshLayout) mRootView.findViewById(R.id.refreshLayout);
         swipeView.setEnabled(false);
-        mLittleWindow = (RelativeLayout)rootView.findViewById(R.id.little_window);
-        videoRecyclerView = (RecyclerView) rootView.findViewById(R.id.videoRecyclerView);
-        mLayoutManager = new LinearLayoutManager(mainActivity);
+        mLittleWindow = (RelativeLayout) mRootView.findViewById(R.id.little_window);
+        mRecyclerView = (RecyclerView) mRootView.findViewById(R.id.videoRecyclerView);
+        mLayoutManager = new LinearLayoutManager(mMainActivity);
         mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        videoRecyclerView.setLayoutManager(mLayoutManager);
+        mRecyclerView.setLayoutManager(mLayoutManager);
         /***
          *  全屏播放器放在MainActivity中
          */
-        fullScreen = (RelativeLayout) mainActivity.findViewById(R.id.full_screen);
+        mFullScreenLayout = (RelativeLayout) mMainActivity.findViewById(R.id.full_screen);
 
         /***
          * 初始化播放器
          */
-        customMediaPlayer = MDPlayerManager.getMDManager().initialize(mainActivity);
-        customMediaPlayer.setShowTopControl(false).setSupportGesture(false);
-        customMediaPlayer.setScaleType(CustomMediaPlayer.SCALETYPE_FILLPARENT);
+        mCustomMediaPlayer = MDPlayerManager.getMDManager().initialize(mMainActivity);
+        mCustomMediaPlayer.setShowTopControl(false).setSupportGesture(false);
+        mCustomMediaPlayer.setScaleType(CustomMediaPlayer.SCALETYPE_FILLPARENT);//自适应
     }
-
 
 
     @Override
@@ -94,54 +94,54 @@ public class OnlineVideoFragment extends BaseFragment {
         /**
          * 点击开始播放器
          */
-        videoViewAdapater.setPlayClick(new VideoViewAdapater.onPlayClick() {
+        mVideoViewAdapter.setPlayClick(new VideoViewAdapter.onPlayClick() {
             @Override
-            public void onPlayclick(final int position, final RelativeLayout image) {
+            public void onPlayClicked(final int position, final RelativeLayout image) {
                 image.setVisibility(View.GONE);
                 //重复点击当前视频，返回
-                if (customMediaPlayer.isPlaying() && lastPostion == position) {
+                if (mCustomMediaPlayer.isPlaying() && mLastPlayPosition == position) {
                     return;
                 }
 
-                postion = position;
-                if (customMediaPlayer.getVideoStatus() == IjkVideoView.STATE_PAUSED) {
-                    if (position != lastPostion) {
-                        customMediaPlayer.stopPlayVideo();
-                        customMediaPlayer.release();
+                mCurrPlayPosition = position;
+                if (mCustomMediaPlayer.getVideoStatus() == IjkVideoView.STATE_PAUSED) {
+                    if (position != mLastPlayPosition) {
+                        mCustomMediaPlayer.stopPlayVideo();
+                        mCustomMediaPlayer.release();
                     }
                 }
-                if (lastPostion != -1 && mLittleWindow.getChildCount() == 0) {
-                    final FrameLayout fl = (FrameLayout) customMediaPlayer.getParent();
-                    final View cov = customMediaPlayer.findView(R.id.adapter_player_control);
-                    boolean b = customMediaPlayer.removeSelf();
+                //上次播放位置有效且非小窗模式,将上一播放位置player移除,恢复初始状态
+                if (mLastPlayPosition != -1 && mLittleWindow.getChildCount() == 0) {
+                    final FrameLayout fl = (FrameLayout) mCustomMediaPlayer.getParent();
+                    final View cov = mCustomMediaPlayer.findView(R.id.adapter_player_control);
+                    boolean b = mCustomMediaPlayer.removeSelf();
                     if (fl != null && cov != null) {
                         cov.setVisibility(View.VISIBLE);
                         exitAnimator(fl, cov);
                     }
                 }
-
-                customMediaPlayer.removeSelf();
-                View view = videoRecyclerView.findViewHolderForAdapterPosition(position).itemView;
-                final FrameLayout frameLayout = (FrameLayout) view.findViewById(R.id.adapter_super_video);
-                frameLayout.removeAllViews();
+                //小窗模式或其他情况,先移除player
+                mCustomMediaPlayer.removeSelf();
+                View view = mRecyclerView.findViewHolderForAdapterPosition(position).itemView;
+                FrameLayout videoContainer = (FrameLayout) view.findViewById(R.id.adapter_super_video);
+                videoContainer.removeAllViews();
                 //mdPlayer.showView(R.id.adapter_player_control);
-                customMediaPlayer.setHideControl(false);
-                frameLayout.addView(customMediaPlayer);
-                customMediaPlayer.play(dataList.get(position).getVideoUrl());
-                Toast.makeText(mainActivity, "position:" + position + ", lastPosition:" + lastPostion, Toast.LENGTH_SHORT).show();
-                lastPostion = position;
-                enterAnimator(frameLayout);
-
+                mCustomMediaPlayer.setHideControl(false);
+                videoContainer.addView(mCustomMediaPlayer);
+                mCustomMediaPlayer.play(mDataList.get(position).getVideoUrl());
+                //Toast.makeText(mMainActivity, "position:" + position + ", lastPosition:" + mLastPlayPosition, Toast.LENGTH_SHORT).show();
+                mLastPlayPosition = position;
+                enterAnimator(videoContainer);
             }
         });
 
         /**
          * 播放完设置还原播放界面
          */
-        customMediaPlayer.onComplete(new Runnable() {
+        mCustomMediaPlayer.onComplete(new Runnable() {
             @Override
             public void run() {
-                ViewGroup last = (ViewGroup) customMediaPlayer.getParent();//找到videoitemview的父类，然后remove
+                ViewGroup last = (ViewGroup) mCustomMediaPlayer.getParent();//找到videoitemview的父类，然后remove
                 if (last != null && last.getChildCount() > 0) {
                     last.removeAllViews();
                     View itemView = (View) last.getParent();
@@ -154,7 +154,7 @@ public class OnlineVideoFragment extends BaseFragment {
         /***
          * 监听列表的下拉滑动
          */
-        videoRecyclerView.addOnChildAttachStateChangeListener(new RecyclerView.OnChildAttachStateChangeListener() {
+        mRecyclerView.addOnChildAttachStateChangeListener(new RecyclerView.OnChildAttachStateChangeListener() {
 
             /**
              * 当recyclerView的item添加到屏幕是分情况处理视频播放器
@@ -162,14 +162,14 @@ public class OnlineVideoFragment extends BaseFragment {
              */
             @Override
             public void onChildViewAttachedToWindow(View view) {
-                int index = videoRecyclerView.getChildAdapterPosition(view);
-                Log.e("online", "onChildViewAttachedToWindow --> "+ index + ", position:" + postion);
-                View controlview = view.findViewById(R.id.adapter_player_control);
-                if (controlview == null) {
+                int index = mRecyclerView.getChildAdapterPosition(view);
+                Log.e("online", "onChildViewAttachedToWindow --> " + index + ", position:" + mCurrPlayPosition);
+                View controlView = view.findViewById(R.id.adapter_player_control);
+                if (controlView == null) {
                     return;
                 }
                 view.findViewById(R.id.adapter_player_control).setVisibility(View.VISIBLE);
-                if (index == postion) {
+                if (index == mCurrPlayPosition) {
                     FrameLayout frameLayout = (FrameLayout) view.findViewById(R.id.adapter_super_video);
                     frameLayout.removeAllViews();
                     /*if (mdPlayer != null &&
@@ -184,10 +184,10 @@ public class OnlineVideoFragment extends BaseFragment {
                         return;
                     }*/
                     view.findViewById(R.id.adapter_player_control).setVisibility(View.GONE);
-                    if (customMediaPlayer.getParent() != null) {
-                        customMediaPlayer.setHideControl(false);
-                        ((ViewGroup) customMediaPlayer.getParent()).removeAllViews();
-                        frameLayout.addView(customMediaPlayer);
+                    if (mCustomMediaPlayer.getParent() != null) {
+                        mCustomMediaPlayer.setHideControl(false);
+                        ((ViewGroup) mCustomMediaPlayer.getParent()).removeAllViews();
+                        frameLayout.addView(mCustomMediaPlayer);
                     }
                 }
             }
@@ -198,19 +198,19 @@ public class OnlineVideoFragment extends BaseFragment {
              */
             @Override
             public void onChildViewDetachedFromWindow(View view) {
-                int index = videoRecyclerView.getChildAdapterPosition(view);
-                Log.e("online", "onChildViewDetachedFromWindow --> "+ index + ", position:" + postion);
-                if ((index) == postion) {
+                int index = mRecyclerView.getChildAdapterPosition(view);
+                Log.e("online", "onChildViewDetachedFromWindow --> " + index + ", position:" + mCurrPlayPosition);
+                if ((index) == mCurrPlayPosition) {
                     if (true) {
-                        if (customMediaPlayer != null) {
+                        if (mCustomMediaPlayer != null) {
                             /*mdPlayer.stop();
                             mdPlayer.release();
                             mdPlayer.showView(R.id.adapter_player_control);*/
-                            customMediaPlayer.showView(R.id.adapter_player_control);
-                            customMediaPlayer.setHideControl(true);
+                            mCustomMediaPlayer.showView(R.id.adapter_player_control);
+                            mCustomMediaPlayer.setHideControl(true);
                             mLittleWindow.setVisibility(View.VISIBLE);
                             mLittleWindow.removeAllViews();
-                            mLittleWindow.addView(customMediaPlayer);
+                            mLittleWindow.addView(mCustomMediaPlayer);
                         }
                     }
                 }
@@ -221,26 +221,28 @@ public class OnlineVideoFragment extends BaseFragment {
     @Override
     protected void initDatas() {
         setData();
-        videoViewAdapater = new VideoViewAdapater(mainActivity);
-        videoViewAdapater.setData(dataList);
-        videoRecyclerView.setAdapter(videoViewAdapater);
+        mVideoViewAdapter = new VideoViewAdapter(mMainActivity);
+        mVideoViewAdapter.setData(mDataList);
+        mRecyclerView.setAdapter(mVideoViewAdapter);
     }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         Log.e("online", "onConfigurationChanged -->" + newConfig.orientation);
-        if (customMediaPlayer != null) {
+        if (mCustomMediaPlayer != null) {
             /**
              * 在activity中监听到横竖屏变化时调用播放器的监听方法来实现播放器大小切换
              */
-            customMediaPlayer.onConfigurationChanged(newConfig);
+            mCustomMediaPlayer.onConfigurationChanged(newConfig);
+            //屏蔽了点击全屏后,再次竖屏返回到列表,无限全屏的操作
             if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
                 /*showActionBar();
-                fullScreen.setVisibility(View.GONE);
-                fullScreen.removeAllViews();
-                videoRecyclerView.setVisibility(View.VISIBLE);
-                if (postion <= mLayoutManager.findLastVisibleItemPosition()
-                        && postion >= mLayoutManager.findFirstVisibleItemPosition()) {
-                    View view = videoRecyclerView.findViewHolderForAdapterPosition(postion).itemView;
+                mFullScreenLayout.setVisibility(View.GONE);
+                mFullScreenLayout.removeAllViews();
+                mRecyclerView.setVisibility(View.VISIBLE);
+                if (mCurrPlayPosition <= mLayoutManager.findLastVisibleItemPosition()
+                        && mCurrPlayPosition >= mLayoutManager.findFirstVisibleItemPosition()) {
+                    View view = mRecyclerView.findViewHolderForAdapterPosition(mCurrPlayPosition).itemView;
                     FrameLayout frameLayout = (FrameLayout) view.findViewById(R.id.adapter_super_video);
                     frameLayout.removeAllViews();
                     ViewGroup last = (ViewGroup) mdPlayer.getParent();//找到videoitemview的父类，然后remove
@@ -249,31 +251,28 @@ public class OnlineVideoFragment extends BaseFragment {
                     }
                     frameLayout.addView(mdPlayer);
                 }
-                int mShowFlags =
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                int mShowFlags = View.SYSTEM_UI_FLAG_LAYOUT_mFullScreenLayout
                                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-                fullScreen.setSystemUiVisibility(mShowFlags);*/
+                mFullScreenLayout.setSystemUiVisibility(mShowFlags);*/
             } else {
-                ViewGroup viewGroup = (ViewGroup) customMediaPlayer.getParent();
+                ViewGroup viewGroup = (ViewGroup) mCustomMediaPlayer.getParent();
                 if (viewGroup == null)
                     return;
                 hideActionBar();
                 viewGroup.removeAllViews();
-                fullScreen.addView(customMediaPlayer);
-                fullScreen.setVisibility(View.VISIBLE);
-                int mHideFlags =
-                        View.SYSTEM_UI_FLAG_LOW_PROFILE
+                mFullScreenLayout.addView(mCustomMediaPlayer);
+                mFullScreenLayout.setVisibility(View.VISIBLE);
+                int mHideFlags = View.SYSTEM_UI_FLAG_LOW_PROFILE
                                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                                 | View.SYSTEM_UI_FLAG_IMMERSIVE
                                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        ;
-                fullScreen.setSystemUiVisibility(mHideFlags);
+                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+                mFullScreenLayout.setSystemUiVisibility(mHideFlags);
             }
         } else {
-            fullScreen.setVisibility(View.GONE);
+            mFullScreenLayout.setVisibility(View.GONE);
         }
         super.onConfigurationChanged(newConfig);
     }
@@ -281,71 +280,72 @@ public class OnlineVideoFragment extends BaseFragment {
     /**
      * 隐藏ActionBar
      */
-    private void hideActionBar(){
-        if(mainActivity.getSupportActionBar() != null)
-            mainActivity.getSupportActionBar().hide();
+    private void hideActionBar() {
+        if (mMainActivity.getSupportActionBar() != null)
+            mMainActivity.getSupportActionBar().hide();
     }
 
     /**
      * 显示ActionBar
      */
-    private void showActionBar(){
-        if(mainActivity.getSupportActionBar() != null)
-            mainActivity.getSupportActionBar().show();
+    private void showActionBar() {
+        if (mMainActivity.getSupportActionBar() != null)
+            mMainActivity.getSupportActionBar().show();
     }
 
     /**
      * 添加测试数据
+     *
      * @return
      */
     private List<VideoListBean> setData() {
-        dataList.clear();
+        mDataList.clear();
         VideoListBean bean0 = new VideoListBean();
         //bean0.setVideoUrl("http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8");
         bean0.setVideoUrl("http://ht.cdn.turner.com/nba/big/channels/nba_tv/2016/04/02/20160402-bop-warriors-celtics.nba_nba_1280x720.mp4");
-        dataList.add(bean0);
+        mDataList.add(bean0);
         VideoListBean bean00 = new VideoListBean();
         bean00.setVideoUrl("http://ips.ifeng.com/video19.ifeng.com/video09/2014/06/16/1989823-102-086-0009.mp4");
-        dataList.add(bean00);
+        mDataList.add(bean00);
         VideoListBean bean1 = new VideoListBean();
         bean1.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=9502&editionType=normal");
-        dataList.add(bean1);
+        mDataList.add(bean1);
         VideoListBean bean2 = new VideoListBean();
         bean2.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=9508&editionType=normal");
-        dataList.add(bean2);
+        mDataList.add(bean2);
         VideoListBean bean3 = new VideoListBean();
         bean3.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=8438&editionType=normal");
-        dataList.add(bean3);
+        mDataList.add(bean3);
         VideoListBean bean4 = new VideoListBean();
         bean4.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=8340&editionType=normal");
-        dataList.add(bean4);
+        mDataList.add(bean4);
         VideoListBean bean5 = new VideoListBean();
         bean5.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=9392&editionType=normal");
-        dataList.add(bean5);
+        mDataList.add(bean5);
         VideoListBean bean6 = new VideoListBean();
         bean6.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=7524&editionType=normal");
-        dataList.add(bean6);
+        mDataList.add(bean6);
         VideoListBean bean7 = new VideoListBean();
         bean7.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=9444&editionType=normal");
-        dataList.add(bean7);
+        mDataList.add(bean7);
         VideoListBean bean8 = new VideoListBean();
         bean8.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=9442&editionType=normal");
-        dataList.add(bean8);
+        mDataList.add(bean8);
         VideoListBean bean9 = new VideoListBean();
         bean9.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=8530&editionType=normal");
-        dataList.add(bean9);
+        mDataList.add(bean9);
         VideoListBean bean10 = new VideoListBean();
         bean10.setVideoUrl("http://baobab.wandoujia.com/api/v1/playUrl?vid=9418&editionType=normal");
-        dataList.add(bean10);
-        return dataList;
+        mDataList.add(bean10);
+        return mDataList;
     }
 
     /**
      * 暂停
      */
-    public void pauseToPlay(){
-        if (customMediaPlayer != null) {
-            customMediaPlayer.onPause();
+    public void pauseToPlay() {
+        if (mCustomMediaPlayer != null) {
+            mCustomMediaPlayer.onPause();
         }
     }
 
@@ -355,64 +355,68 @@ public class OnlineVideoFragment extends BaseFragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (customMediaPlayer != null) {
-            customMediaPlayer.onPause();
+        if (mCustomMediaPlayer != null) {
+            mCustomMediaPlayer.onPause();
         }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (customMediaPlayer != null) {
-            customMediaPlayer.onResume();
+        if (mCustomMediaPlayer != null) {
+            mCustomMediaPlayer.onResume();
         }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (customMediaPlayer != null) {
-            customMediaPlayer.onDestroy();
+        if (mCustomMediaPlayer != null) {
+            mCustomMediaPlayer.onDestroy();
         }
     }
 
     public boolean onBackPressed() {
-        if (customMediaPlayer != null && fullScreen.getVisibility() == View.VISIBLE) {
+        //退出全屏模式
+        if (mCustomMediaPlayer != null && mFullScreenLayout.getVisibility() == View.VISIBLE) {
             getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             showActionBar();
-            fullScreen.setVisibility(View.GONE);
-            fullScreen.removeAllViews();
-            videoRecyclerView.setVisibility(View.VISIBLE);
-            if (postion <= mLayoutManager.findLastVisibleItemPosition()
-                    && postion >= mLayoutManager.findFirstVisibleItemPosition()) {
-                View view = videoRecyclerView.findViewHolderForAdapterPosition(postion).itemView;
+            mFullScreenLayout.setVisibility(View.GONE);
+            mFullScreenLayout.removeAllViews();
+            mRecyclerView.setVisibility(View.VISIBLE);
+            if (mCurrPlayPosition <= mLayoutManager.findLastVisibleItemPosition()
+                    && mCurrPlayPosition >= mLayoutManager.findFirstVisibleItemPosition()) {
+                View view = mRecyclerView.findViewHolderForAdapterPosition(mCurrPlayPosition).itemView;
                 FrameLayout frameLayout = (FrameLayout) view.findViewById(R.id.adapter_super_video);
                 frameLayout.removeAllViews();
-                ViewGroup last = (ViewGroup) customMediaPlayer.getParent();//找到videoitemview的父类，然后remove
+                ViewGroup last = (ViewGroup) mCustomMediaPlayer.getParent();//找到videoitemview的父类，然后remove
                 if (last != null) {
                     last.removeAllViews();
                 }
-                frameLayout.addView(customMediaPlayer);
+                frameLayout.addView(mCustomMediaPlayer);
             }
             int mShowFlags =
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-            fullScreen.setSystemUiVisibility(mShowFlags);
+            mFullScreenLayout.setSystemUiVisibility(mShowFlags);
             return true;
         }
-        if (customMediaPlayer != null && customMediaPlayer.onBackPressed()) {
+        //如果有播放视频,停止播放
+        if (mCurrPlayPosition != -1 && mCustomMediaPlayer != null && mCustomMediaPlayer.isPlaying()) {
+            mCustomMediaPlayer.showView(R.id.adapter_player_control);
+            mCustomMediaPlayer.stop();
+            mCurrPlayPosition = -1;
             return true;
         }
-        if (postion != -1 && customMediaPlayer != null && customMediaPlayer.isPlaying()) {
-            customMediaPlayer.stop();
-            customMediaPlayer.release();
-            customMediaPlayer.showView(R.id.adapter_player_control);
+        //托管事件
+        if (mCustomMediaPlayer != null && mCustomMediaPlayer.onBackPressed()) {
             return true;
         }
         return false;
     }
 
+    //停止播放的动画
     private void exitAnimator(final View playerContainer, final View cover) {
         ValueAnimator animator = ObjectAnimator.ofFloat(100f, 0f);
         animator.setDuration(300);
@@ -420,24 +424,25 @@ public class OnlineVideoFragment extends BaseFragment {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float s = animation.getAnimatedFraction();
-                Log.e("online", "last onAnimationUpdate --> " + s + "last = " + lastPostion);
+                Log.e("online", "last onAnimationUpdate --> " + s + "last = " + mLastPlayPosition);
                 RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) playerContainer.getLayoutParams();
-                params.setMargins((int)(DeviceUtils.dp2px(getActivity(), 8f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 4.5f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 8f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 4.5f) * s));
+                params.setMargins((int) (DeviceUtils.dp2px(getActivity(), 8f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 4.5f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 8f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 4.5f) * s));
                 playerContainer.setLayoutParams(params);
                 RelativeLayout.LayoutParams params11 = (RelativeLayout.LayoutParams) cover.getLayoutParams();
-                params11.setMargins((int)(DeviceUtils.dp2px(getActivity(), 8f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 4.5f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 8f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 4.5f) * s));
+                params11.setMargins((int) (DeviceUtils.dp2px(getActivity(), 8f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 4.5f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 8f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 4.5f) * s));
                 cover.setLayoutParams(params11);
             }
         });
         animator.start();
     }
 
+    //播放视频的动画
     private void enterAnimator(final View playerContainer) {
         ValueAnimator animator = ObjectAnimator.ofFloat(100f, 0f);
         animator.setDuration(300);
@@ -447,10 +452,10 @@ public class OnlineVideoFragment extends BaseFragment {
                 float s = 1 - animation.getAnimatedFraction();
                 Log.e("online", "onAnimationUpdate --> " + s);
                 RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) playerContainer.getLayoutParams();
-                params.setMargins((int)(DeviceUtils.dp2px(getActivity(), 8f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 4.5f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 8f) * s),
-                        (int)(DeviceUtils.dp2px(getActivity(), 4.5f) * s));
+                params.setMargins((int) (DeviceUtils.dp2px(getActivity(), 8f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 4.5f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 8f) * s),
+                        (int) (DeviceUtils.dp2px(getActivity(), 4.5f) * s));
                 playerContainer.setLayoutParams(params);
             }
         });
